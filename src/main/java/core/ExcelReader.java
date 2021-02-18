@@ -6,6 +6,7 @@ import static constants.AppConstants.FILE_NAME;
 import static constants.AppConstants.FILE_PATH;
 import static constants.AppConstants.INCORRECT_FILE_FORMAT_EXCEPTION;
 
+import org.slf4j.Logger;
 import util.Util;
 import java.io.File;
 import java.io.FileInputStream;
@@ -21,6 +22,8 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ExcelReader {
+
+  private Logger logger = org.slf4j.LoggerFactory.getLogger(ExcelReader.class);
 
   public void readExcel() throws IOException {
     ConfigLoader databaseConfig = ConfigLoader.getDatabaseConfig();
@@ -47,6 +50,7 @@ public class ExcelReader {
           file.close();
         }
       } catch (Exception e) {
+        databaseConfig.getLogger().error("Exception in reading excel file", e);
         throw e;
       }
     }
@@ -55,6 +59,7 @@ public class ExcelReader {
   private boolean validateFileName(String fileName) throws Exception {
     String ext = Util.getFileExtension(fileName);
     if (!(FILE_EXTENSION.equalsIgnoreCase(ext))) {
+      logger.error("Incorrect file format exception");
       throw new Exception(INCORRECT_FILE_FORMAT_EXCEPTION);
     }
     return true;
@@ -95,12 +100,12 @@ public class ExcelReader {
       count++;
 
       if (count % batchSize == 0) {
-        System.out.println("Inserting batch of records");
+        logger.info("Inserting batch of records %d", count);
         databaseConfig.insertData(statement);
       }
     }
     databaseConfig.insertData(statement);
-    System.out.println("Records inserted successfully in table ->" + tableName);
+    logger.info("Records inserted successfully in table ->" + tableName);
   }
 
 

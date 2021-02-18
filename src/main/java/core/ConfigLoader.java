@@ -24,12 +24,14 @@ import java.sql.Statement;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import org.slf4j.Logger;
 
 public class ConfigLoader {
 
   private static Connection conn = null;
   private static Properties properties;
   private Statement stmt = null;
+  private Logger logger = org.slf4j.LoggerFactory.getLogger(ConfigLoader.class);
 
   private static ConfigLoader databaseConfig;
 
@@ -57,6 +59,10 @@ public class ConfigLoader {
     return properties;
   }
 
+  protected Logger getLogger(){
+    return logger;
+  }
+
   private void loadDataFromPropertiesFile() {
     properties = new Properties();
     String propFileName = AppConstants.PROPERTY_FILE;
@@ -77,7 +83,7 @@ public class ConfigLoader {
     final String DB_URL = properties.getProperty(AppConstants.DB_URL);
     final String USER = properties.getProperty(AppConstants.USERNAME);
     final String PASS = properties.getProperty(AppConstants.PASSWORD);
-    System.out.println("Connecting to a selected database...");
+    logger.info("Connecting to a selected database...");
     try {
       Class.forName(AppConstants.MY_SQL_DRIVER);
       conn = DriverManager.getConnection(DB_URL, USER, PASS);
@@ -88,14 +94,14 @@ public class ConfigLoader {
       e.printStackTrace();
     }
 
-    System.out.println("Connected database successfully...");
+    logger.info("Connected database successfully...");
     return conn;
   }
 
   protected void createTable(String tableName, Map<String, Integer> columns) {
     try {
       if (!tableExist(tableName.toLowerCase())) {
-        System.out.println("Creating table in given database...");
+        logger.info("Creating table " + tableName);
         stmt = conn.createStatement();
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(AppConstants.CREATE_TABLE).append(SPACE).append(tableName)
@@ -110,7 +116,7 @@ public class ConfigLoader {
         stringBuilder.deleteCharAt(stringBuilder.toString().length() - 1);
         stringBuilder.append(AppConstants.CLOSING_BRACKET);
         stmt.executeUpdate(stringBuilder.toString());
-        System.out.println("Created table in given database...");
+        logger.info("Created table ->" + tableName);
       }
     } catch (SQLException e) {
       e.printStackTrace();
