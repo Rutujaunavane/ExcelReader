@@ -107,7 +107,7 @@ public class ConfigLoader {
         stringBuilder.append(AppConstants.CREATE_TABLE).append(SPACE).append(tableName)
             .append(AppConstants.OPENING_BRACKET);
         columns.forEach((k, v) -> {
-          stringBuilder.append(k);
+          stringBuilder.append(k.replaceAll("\\s", ""));
           stringBuilder.append(SPACE);
           stringBuilder.append(getColumnType(v));
           stringBuilder.append(SPACE);
@@ -131,7 +131,7 @@ public class ConfigLoader {
     StringBuilder valuesString = new StringBuilder();
     valuesString.append(OPENING_BRACKET);
     columnNames.forEach((k, v) -> {
-      insertQuery.append(k);
+      insertQuery.append(k.replaceAll("\\s", ""));
       insertQuery.append(COMMA);
       valuesString.append(QUESTION_MARK);
       valuesString.append(COMMA);

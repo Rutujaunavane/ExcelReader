@@ -100,7 +100,7 @@ public class ExcelReader {
       count++;
 
       if (count % batchSize == 0) {
-        logger.info("Inserting batch of records %d", count);
+        logger.info("Inserting batch of records : " +  count);
         databaseConfig.insertData(statement);
       }
     }
