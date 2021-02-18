@@ -1,7 +1,7 @@
 # ExcelReader
 A Java Program to read data from and store the records in mysql by creating tables.
 
-## Descrption
+## Description
 This utility reads the data from excel file and store the records in mysql table.
 
 ## Technologies Used
@@ -16,7 +16,7 @@ This utility reads the data from excel file and store the records in mysql table
 * Maven
 
 ## How to use
-* Checkout the project.
+* Clone the project.
 * Add the configurations in the config.properties file located in the main/java/resources folder.
 * Run mvn clean install in the location of pom.xml file.
 * Execute the class ExcelToMysql.
