@@ -22,16 +22,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
-import org.slf4j.Logger;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Cell;
+import util.Util;
 
+@Slf4j
 public class ConfigLoader {
 
   private static Connection conn = null;
   private static Properties properties;
   private Statement stmt = null;
-  private Logger logger = org.slf4j.LoggerFactory.getLogger(ConfigLoader.class);
 
   private static ConfigLoader databaseConfig;
 
@@ -59,10 +60,6 @@ public class ConfigLoader {
     return properties;
   }
 
-  protected Logger getLogger(){
-    return logger;
-  }
-
   private void loadDataFromPropertiesFile() {
     properties = new Properties();
     String propFileName = AppConstants.PROPERTY_FILE;
@@ -83,7 +80,7 @@ public class ConfigLoader {
     final String DB_URL = properties.getProperty(AppConstants.DB_URL);
     final String USER = properties.getProperty(AppConstants.USERNAME);
     final String PASS = properties.getProperty(AppConstants.PASSWORD);
-    logger.info("Connecting to a selected database...");
+    log.info("Connecting to a selected database...");
     try {
       Class.forName(AppConstants.MY_SQL_DRIVER);
       conn = DriverManager.getConnection(DB_URL, USER, PASS);
@@ -94,14 +91,14 @@ public class ConfigLoader {
       e.printStackTrace();
     }
 
-    logger.info("Connected database successfully...");
+    log.info("Connected database successfully...");
     return conn;
   }
 
-  protected void createTable(String tableName, Map<String, Integer> columns) {
+  protected void createTable(String tableName, Map<String, Cell> columns) {
     try {
       if (!tableExist(tableName.toLowerCase())) {
-        logger.info("Creating table " + tableName);
+        log.info("Creating table " + tableName);
         stmt = conn.createStatement();
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(AppConstants.CREATE_TABLE).append(SPACE).append(tableName)
@@ -109,24 +106,24 @@ public class ConfigLoader {
         columns.forEach((k, v) -> {
           stringBuilder.append(k.replaceAll("\\s", ""));
           stringBuilder.append(SPACE);
-          stringBuilder.append(getColumnType(v));
+          stringBuilder.append(getColumnType(v.getCellType()));
           stringBuilder.append(SPACE);
           stringBuilder.append(COMMA);
         });
         stringBuilder.deleteCharAt(stringBuilder.toString().length() - 1);
         stringBuilder.append(AppConstants.CLOSING_BRACKET);
         stmt.executeUpdate(stringBuilder.toString());
-        logger.info("Created table ->" + tableName);
+        log.info("Created table ->" + tableName);
       }
     } catch (SQLException e) {
       e.printStackTrace();
     }
   }
 
-  protected PreparedStatement getPreparedStatement(Map<String, Integer> columnNames,
+  protected PreparedStatement getPreparedStatement(Map<String, Cell> columnNames,
       String tableName) {
     StringBuilder insertQuery = new StringBuilder(INSERT_INTO_QUERY);
-    insertQuery.append(tableName);
+    insertQuery.append(Util.removeSpecialCharacterFromName(tableName));
     insertQuery.append(OPENING_BRACKET);
     StringBuilder valuesString = new StringBuilder();
     valuesString.append(OPENING_BRACKET);

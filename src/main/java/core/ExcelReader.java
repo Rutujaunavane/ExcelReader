@@ -5,7 +5,8 @@ import static constants.AppConstants.FILE_EXTENSION;
 import static constants.AppConstants.FILE_NAME;
 import static constants.AppConstants.FILE_PATH;
 import static constants.AppConstants.INCORRECT_FILE_FORMAT_EXCEPTION;
-
+import java.util.LinkedHashMap;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import util.Util;
 import java.io.File;
@@ -13,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.poi.ss.usermodel.Cell;
@@ -21,9 +21,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+@Slf4j
 public class ExcelReader {
-
-  private Logger logger = org.slf4j.LoggerFactory.getLogger(ExcelReader.class);
 
   public void readExcel() throws IOException {
     ConfigLoader databaseConfig = ConfigLoader.getDatabaseConfig();
@@ -36,7 +35,7 @@ public class ExcelReader {
         file = new FileInputStream(new File((filePath + fileName)));
         workbook = new XSSFWorkbook(file);
         XSSFSheet sheet = workbook.getSheetAt(0);
-        readExcel(databaseConfig, sheet, fileName);
+        readSheet(databaseConfig, sheet, fileName);
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -50,7 +49,7 @@ public class ExcelReader {
           file.close();
         }
       } catch (Exception e) {
-        databaseConfig.getLogger().error("Exception in reading excel file", e);
+        log.error("Exception in reading excel file", e);
         throw e;
       }
     }
@@ -59,7 +58,7 @@ public class ExcelReader {
   private boolean validateFileName(String fileName) throws Exception {
     String ext = Util.getFileExtension(fileName);
     if (!(FILE_EXTENSION.equalsIgnoreCase(ext))) {
-      logger.error("Incorrect file format exception");
+      log.error(INCORRECT_FILE_FORMAT_EXCEPTION);
       throw new Exception(INCORRECT_FILE_FORMAT_EXCEPTION);
     }
     return true;
@@ -80,18 +79,32 @@ public class ExcelReader {
     }
   }
 
-  private void readExcel(ConfigLoader databaseConfig, XSSFSheet sheet, String fileName)
-      throws SQLException {
-    Map<String, Integer> columnNameTypeMap = getColumnNameTypeMap(sheet);
-    String tableName = Util.getNameWithoutExtension(fileName);
+  private  String createTable(String sheetName, ConfigLoader databaseConfig,
+      Map<String, Cell> columnNameTypeMap) {
+    String tableName = Util.removeSpecialCharacterFromName(sheetName);
     databaseConfig.createTable(tableName, columnNameTypeMap);
-    Iterator<Row> rowIterator = sheet.iterator();
-    rowIterator.next();
+    return tableName;
+  }
+
+  private void readSheet(ConfigLoader databaseConfig, XSSFSheet sheet, String sheetName)
+      throws SQLException {
+    Map<String, Cell> columnNameTypeMap = getColumnNameCellMap(sheet);
+    String tableName = createTable(sheetName,databaseConfig,columnNameTypeMap);
+
     PreparedStatement statement = databaseConfig
         .getPreparedStatement(columnNameTypeMap, tableName);
+    insertDataInTable(statement,sheet,databaseConfig);
+
+    log.info("Records inserted successfully in table ->" + tableName);
+  }
+
+  private void insertDataInTable(PreparedStatement statement, XSSFSheet sheet,
+      ConfigLoader databaseConfig)
+      throws SQLException {
+    Iterator<Row> rowIterator = sheet.iterator();
     int count = 0;
     int batchSize = Integer.parseInt((String) databaseConfig.getProperties().get(BATCH_SIZE));
-
+    rowIterator.next();
     while (rowIterator.hasNext()) {
       Row row = rowIterator.next();
       Iterator<Cell> cellIterator = row.cellIterator();
@@ -100,19 +113,18 @@ public class ExcelReader {
       count++;
 
       if (count % batchSize == 0) {
-        logger.info("Inserting batch of records : " +  count);
+        log.info("Inserting batch of records : " + count);
         databaseConfig.insertData(statement);
       }
     }
     databaseConfig.insertData(statement);
-    logger.info("Records inserted successfully in table ->" + tableName);
   }
 
 
-  private Map<String, Integer> getColumnNameTypeMap(XSSFSheet sheet) {
-    Map<String, Integer> columns = new HashMap<>();
+  private Map<String, Cell> getColumnNameCellMap(XSSFSheet sheet) {
+    Map<String, Cell> columns = new LinkedHashMap<>();
     sheet.getRow(0).forEach(cell -> {
-      columns.put(cell.getStringCellValue(), cell.getColumnIndex());
+      columns.put(Util.removeSpecialCharacterFromName(cell.getStringCellValue()), cell);
     });
     return columns;
   }

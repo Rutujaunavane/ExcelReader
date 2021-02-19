@@ -19,7 +19,7 @@ public class AppConstants {
   public static final String CLOSING_BRACKET = ")";
   public static final String QUESTION_MARK = "?";
   public static final String INTEGER_DATA_TYPE = "INTEGER";
-  public static final String DOUBLE_DATA_TYPE = "DOUBLE";
+  public static final String DOUBLE_DATA_TYPE = "DOUBLE(40,0)";
   public static final String VARCHAR_DATA_TYPE = "VARCHAR(255)";
   public static final String INSERT_INTO_QUERY = "INSERT INTO ";
   public static final String FILE_EXTENSION = "xlsx";
